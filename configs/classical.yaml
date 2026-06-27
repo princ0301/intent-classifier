@@ -1,0 +1,25 @@
+model:
+  type: logistic_regression
+  C: 1.0
+  max-iter: 1000
+  random_state: 42
+
+tfidf:
+  max-features: 50000
+  ngram_range: [1, 2]
+  min_df: 2
+
+data:
+  dataset: clinc_oos
+  subset: plus
+  test_size: 0.1
+  val_size: 0.1
+  random_state: 42
+
+mlflow:
+  experiment_name: intent-classifier
+  run_name: logistic_regression
+
+s3:
+  bucket: intent-classifier-artifacts
+  prefix: classical

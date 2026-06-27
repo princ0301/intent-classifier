@@ -1,0 +1,29 @@
+model:
+  type: distilbert
+  name: distilbert-base-uncased
+  num_labels: 151
+  dropout: 0.1
+
+training:
+  epochs: 5
+  batch_size: 32
+  learning_rate: 2e-5
+  warmup_steps: 500
+  weight_decay: 0.01
+  random_state: 42
+
+data:
+  dataset: clinc_oos
+  subset: plus
+  max_length: 128
+  test_size: 0.1
+  val_size: 0.1
+  random_state: 42
+
+mlflow:
+  experiment_name: intent-classifier
+  run_name: distilbert-finetuned
+
+s3:
+  bucket: intent-classifier-artifacts
+  prefix: transformer

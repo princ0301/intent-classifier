@@ -1,0 +1,28 @@
+model:
+  type: textcnn
+  embedding_dim: 128
+  num_filters: 128
+  kernel_sizes: [2, 3, 4]
+  dropout: 0.3
+
+training:
+  epochs: 20
+  batch_size: 64
+  learning_rate: 0.001
+  random_state: 42
+  patience: 3
+
+data:
+  dataset: clinc_oos
+  subset: plus
+  test_size: 0.1
+  val_size: 0.1
+  random_state: 42
+ 
+mlflow:
+  experiment_name: intent-classifier
+  run_name: textcnn
+ 
+s3:
+  bucket: intent-classifier-artifacts
+  prefix: neural
