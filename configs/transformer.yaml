@@ -7,7 +7,7 @@ model:
 training:
   epochs: 5
   batch_size: 32
-  learning_rate: 2e-5
+  learning_rate: 0.00002
   warmup_steps: 500
   weight_decay: 0.01
   random_state: 42
@@ -25,5 +25,5 @@ mlflow:
   run_name: distilbert-finetuned
 
 s3:
-  bucket: intent-classifier-artifacts
+  bucket: intent-classifier145
   prefix: transformer

@@ -1,11 +1,12 @@
-import torch
-import numpy as np
-from torch.utils.data import Dataset
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from pathlib import Path
 
-class IntentDatasetHF(Dataset):
+import numpy as np
+import torch
+from torch.utils.data import Dataset
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+
+class IntentDatasetHF(Dataset):
     def __init__(
         self,
         texts: list[str],
@@ -24,25 +25,23 @@ class IntentDatasetHF(Dataset):
 
     def __len__(self) -> int:
         return len(self.labels)
-    
-    def __getitem__(self, idx: int):
+
+    def __getitem__(self, idx: int) -> dict:
         return {
             "input_ids": self.encodings["input_ids"][idx],
             "attention_mask": self.encodings["attention_mask"][idx],
             "labels": torch.tensor(self.labels[idx], dtype=torch.long),
         }
-    
+
 
 class TransformerModel:
-
     def __init__(self, model_name: str, num_labels: int, dropout: float = 0.1):
         self.model_name = model_name
         self.num_labels = num_labels
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_name,
             num_labels=num_labels,
-            hidden_dropout_prob=dropout,
-            attention_probs_dropout_prob=dropout,
+            seq_classif_dropout=dropout,
         )
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -72,6 +71,7 @@ class TransformerModel:
             outputs = self.model(**encodings)
             probs = torch.softmax(outputs.logits, dim=1)
         return probs.cpu().numpy()
-    
+
+
 def get_tokenizer(model_name: str):
     return AutoTokenizer.from_pretrained(model_name)
