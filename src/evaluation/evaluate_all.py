@@ -240,6 +240,7 @@ def plot_comparison(results: dict, save_path: str) -> None:
         bars = ax.bar(df["model"], df[metric].astype(float), color=colors)
         ax.set_title(title, fontsize=14)
         ax.set_ylim(0, 1.1)
+        ax.set_xticks(range(len(df["model"])))
         ax.set_xticklabels(df["model"], rotation=30, ha="right")
         for bar, val in zip(bars, df[metric].astype(float)):
             ax.text(
@@ -281,20 +282,63 @@ def plot_latency(results: dict, save_path: str) -> None:
     print(f"  saved: {save_path}")
 
 
-def plot_confusion_matrix(
+def get_top_confused_pairs(
     y_true: np.ndarray,
     y_pred: np.ndarray,
     label_names: list[str],
+    top_n: int = 20,
+) -> pd.DataFrame:
+    cm = confusion_matrix(y_true, y_pred)
+    np.fill_diagonal(cm, 0)
+
+    pairs = []
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            if cm[i, j] > 0:
+                pairs.append({
+                    "true_label": label_names[i],
+                    "predicted_label": label_names[j],
+                    "count": int(cm[i, j]),
+                })
+
+    df = pd.DataFrame(pairs).sort_values("count", ascending=False).head(top_n)
+    return df.reset_index(drop=True)
+
+
+def plot_top_confused_pairs(df: pd.DataFrame, model_name: str, save_path: str) -> None:
+    fig, ax = plt.subplots(figsize=(10, max(6, len(df) * 0.35)))
+    labels = [f"{row.true_label} -> {row.predicted_label}" for row in df.itertuples()]
+    ax.barh(labels, df["count"], color="#C44E52")
+    ax.invert_yaxis()
+    ax.set_xlabel("Misclassification Count")
+    ax.set_title(f"Top Confused Pairs — {model_name}")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=100, bbox_inches="tight")
+    plt.close()
+    print(f"  saved: {save_path}")
+
+
+def plot_oos_binary_confusion(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    label_map: dict,
     model_name: str,
     save_path: str,
 ) -> None:
-    cm = confusion_matrix(y_true, y_pred)
-    fig, ax = plt.subplots(figsize=(22, 22))
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=label_names)
-    disp.plot(ax=ax, xticks_rotation=90, colorbar=False)
-    ax.set_title(f"Confusion Matrix — {model_name}")
+    oos_id = label_map.get("oos")
+    y_true_binary = (y_true == oos_id).astype(int)
+    y_pred_binary = (y_pred == oos_id).astype(int)
+
+    cm = confusion_matrix(y_true_binary, y_pred_binary)
+    fig, ax = plt.subplots(figsize=(5, 5))
+    disp = ConfusionMatrixDisplay(
+        confusion_matrix=cm,
+        display_labels=["in-scope", "oos"],
+    )
+    disp.plot(ax=ax, colorbar=False, cmap="Blues")
+    ax.set_title(f"OOS Detection — {model_name}")
     plt.tight_layout()
-    plt.savefig(save_path, dpi=80)
+    plt.savefig(save_path, dpi=100, bbox_inches="tight")
     plt.close()
     print(f"  saved: {save_path}")
 
@@ -322,10 +366,19 @@ def main():
     plot_latency(results, str(REPORT_DIR / "latency_comparison.png"))
 
     for model_name, y_pred in predictions.items():
-        plot_confusion_matrix(
-            y_test, y_pred, label_names,
-            model_name,
-            str(REPORT_DIR / f"{model_name}_confusion_matrix.png"),
+        confused_df = get_top_confused_pairs(y_test, y_pred, label_names, top_n=20)
+        confused_csv_path = REPORT_DIR / f"{model_name}_top_confused_pairs.csv"
+        confused_df.to_csv(confused_csv_path, index=False)
+        print(f"  saved: {confused_csv_path}")
+
+        plot_top_confused_pairs(
+            confused_df, model_name,
+            str(REPORT_DIR / f"{model_name}_top_confused_pairs.png"),
+        )
+
+        plot_oos_binary_confusion(
+            y_test, y_pred, label_map, model_name,
+            str(REPORT_DIR / f"{model_name}_oos_binary.png"),
         )
 
     print("\nlogging to MLflow...")
@@ -352,7 +405,6 @@ def main():
             f"{metrics['latency_p50_ms']:<12} "
             f"{metrics['latency_p95_ms']}"
         )
-
 
 if __name__ == "__main__":
     main()
