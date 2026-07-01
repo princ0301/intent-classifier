@@ -117,3 +117,15 @@ what is the meaning of life,27,meaning_of_life,0.9474
 write me a poem about the ocean,31,fun_fact,0.1344
 tell me about quantum physics,29,fun_fact,0.3517
 set an alarm for 7am,20,alarm,0.9719
+what is my account balance,26,balance,0.8772
+what is my account balance,26,balance,0.6264
+what is my account balance,26,balance,0.8772
+what is my account balance,26,balance,0.6264
+book a flight to paris,22,book_flight,0.1532
+set an alarm,12,alarm,0.945
+hello,5,greeting,0.832
+what time is it,15,time,0.9183
+hello,5,greeting,0.832
+goodbye,7,goodbye,0.7772
+what is the weather,19,weather,0.9207
+transfer money,14,transfer,0.5365
