@@ -1,0 +1,57 @@
+name: Train Models
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Model to train"
+        required: true
+        default: "classical"
+        type: choice
+        options:
+          - classical
+          - neural
+          - transformer
+          - all
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-south-1
+      S3_BUCKET: intent-classifier145
+      MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+      MODEL_TYPE: transformer
+      AB_MODEL_A: classical
+      AB_MODEL_B: transformer
+      AB_SPLIT: "0.3"
+      OOS_THRESHOLD: "0.5"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Train classical models
+        if: ${{ inputs.model == 'classical' || inputs.model == 'all' }}
+        run: uv run python src/training/train_classical.py
+
+      - name: Train neural models
+        if: ${{ inputs.model == 'neural' || inputs.model == 'all' }}
+        run: uv run python src/training/train_neural.py
+
+      - name: Train transformer
+        if: ${{ inputs.model == 'transformer' || inputs.model == 'all' }}
+        run: uv run python src/training/train_transformer.py

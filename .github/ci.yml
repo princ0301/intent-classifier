@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Ruff lint
+        run: uv run ruff check src/ api/ app/
+
+      - name: Ruff format check
+        run: uv run ruff format --check src/ api/ app/
+
+  test-unit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Cache uv packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run unit tests (no artifacts needed)
+        run: uv run pytest tests/test_data.py tests/test_features.py tests/test_models.py tests/test_monitoring.py -v
+
+  test-integration:
+    runs-on: ubuntu-latest
+    needs: test-unit
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-south-1
+      S3_BUCKET: intent-classifier145
+      MLFLOW_TRACKING_URI: http://localhost:5000
+      MODEL_TYPE: classical
+      AB_MODEL_A: classical
+      AB_MODEL_B: classical
+      AB_SPLIT: "0.3"
+      OOS_THRESHOLD: "0.5"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Cache uv packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Download artifacts from S3
+        run: |
+          uv run python -c "
+          from src.storage.s3 import download_artifact
+          import os
+          os.makedirs('artifacts/models', exist_ok=True)
+          os.makedirs('artifacts/vectorizers', exist_ok=True)
+          download_artifact('classical/logreg.pkl', 'artifacts/models/logreg.pkl')
+          download_artifact('classical/svm.pkl', 'artifacts/models/svm.pkl')
+          download_artifact('classical/tfidf.pkl', 'artifacts/vectorizers/tfidf.pkl')
+          print('artifacts downloaded')
+          "
+
+      - name: Generate label map
+        run: uv run python -c "
+          from src.data.loader import load_clinc150, save_splits
+          from src.data.preprocessor import preprocess
+          splits = load_clinc150('plus')
+          save_splits(splits)
+          preprocess(splits)
+          print('label map generated')
+          "
+
+      - name: Run serving tests
+        run: uv run pytest tests/test_serving.py -v -k "not transformer"
+
+      - name: Run API tests
+        run: uv run pytest tests/test_api.py -v -k "not transformer"
