@@ -1,10 +1,8 @@
-import json
 from pathlib import Path
 
 import pandas as pd
 from evidently import Report
 from evidently.presets import DataDriftPreset
-
 
 REFERENCE_PATH = "artifacts/monitoring/reference_data.csv"
 CURRENT_PATH = "artifacts/monitoring/current_data.csv"
@@ -19,12 +17,14 @@ def save_reference_data(
     path = Path(save_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    df = pd.DataFrame({
-        "text": texts,
-        "text_length": [len(t) for t in texts],
-        "prediction": predictions,
-        "confidence": confidences,
-    })
+    df = pd.DataFrame(
+        {
+            "text": texts,
+            "text_length": [len(t) for t in texts],
+            "prediction": predictions,
+            "confidence": confidences,
+        }
+    )
     df.to_csv(path, index=False)
 
 
@@ -38,12 +38,14 @@ def append_current_data(
     path = Path(save_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    new_df = pd.DataFrame({
-        "text": texts,
-        "text_length": [len(t) for t in texts],
-        "prediction": predictions,
-        "confidence": confidences,
-    })
+    new_df = pd.DataFrame(
+        {
+            "text": texts,
+            "text_length": [len(t) for t in texts],
+            "prediction": predictions,
+            "confidence": confidences,
+        }
+    )
 
     if path.exists():
         existing_df = pd.read_csv(path)
@@ -98,15 +100,19 @@ def get_drift_summary(snapshot) -> dict:
         if "ValueDrift" in metric_id and isinstance(value, (int, float)):
             column_name = metric.get("metric_name", metric_id)
             if value > 0.5:
-                summary["drifted_columns"].append({
-                    "column": column_name,
-                    "drift_score": round(value, 4),
-                })
+                summary["drifted_columns"].append(
+                    {
+                        "column": column_name,
+                        "drift_score": round(value, 4),
+                    }
+                )
 
     return summary
 
 
-def save_drift_report_html(snapshot, save_path: str = "artifacts/monitoring/drift_report.html") -> None:
+def save_drift_report_html(
+    snapshot, save_path: str = "artifacts/monitoring/drift_report.html"
+) -> None:
     path = Path(save_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     snapshot.save_html(str(path))

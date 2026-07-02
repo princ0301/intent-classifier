@@ -5,13 +5,12 @@ import matplotlib.pyplot as plt
 import mlflow
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import torch
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from torch.utils.data import DataLoader
 
 from src.data.loader import load_splits
-from src.data.preprocessor import load_label_map, preprocess
+from src.data.preprocessor import preprocess
 from src.features.tfidf import load_vectorizer, transform
 from src.models.classical import LogisticRegressionModel, SVMModel
 from src.models.neural import IntentDatasetNN, LSTMModel, TextCNN, Vocabulary
@@ -19,7 +18,6 @@ from src.models.transformer import IntentDatasetHF, TransformerModel
 from src.utils.config import load_config
 from src.utils.mlflow_utils import get_or_create_experiment
 from src.utils.settings import settings
-
 
 VECTORIZER_PATH = "artifacts/vectorizers/tfidf.pkl"
 VOCAB_PATH = "artifacts/models/vocab.pkl"
@@ -44,10 +42,15 @@ def load_data():
 
 def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     from sklearn.metrics import accuracy_score, f1_score
+
     return {
         "accuracy": round(accuracy_score(y_true, y_pred), 4),
-        "macro_f1": round(f1_score(y_true, y_pred, average="macro", zero_division=0), 4),
-        "weighted_f1": round(f1_score(y_true, y_pred, average="weighted", zero_division=0), 4),
+        "macro_f1": round(
+            f1_score(y_true, y_pred, average="macro", zero_division=0), 4
+        ),
+        "weighted_f1": round(
+            f1_score(y_true, y_pred, average="weighted", zero_division=0), 4
+        ),
     }
 
 
@@ -121,6 +124,7 @@ def eval_neural(
         )
     elif model_type == "rnn":
         from src.models.neural import RNNModel
+
         model = RNNModel(
             vocab_size=len(vocab),
             embedding_dim=model_cfg["embedding_dim"],
@@ -198,7 +202,9 @@ def eval_distilbert(processed: dict, label_map: dict) -> tuple[dict, np.ndarray]
         for batch in loader:
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
-            outputs = transformer.model(input_ids=input_ids, attention_mask=attention_mask)
+            outputs = transformer.model(
+                input_ids=input_ids, attention_mask=attention_mask
+            )
             preds = outputs.logits.argmax(dim=1).cpu().numpy()
             all_preds.extend(preds)
 
@@ -295,11 +301,13 @@ def get_top_confused_pairs(
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
             if cm[i, j] > 0:
-                pairs.append({
-                    "true_label": label_names[i],
-                    "predicted_label": label_names[j],
-                    "count": int(cm[i, j]),
-                })
+                pairs.append(
+                    {
+                        "true_label": label_names[i],
+                        "predicted_label": label_names[j],
+                        "count": int(cm[i, j]),
+                    }
+                )
 
     df = pd.DataFrame(pairs).sort_values("count", ascending=False).head(top_n)
     return df.reset_index(drop=True)
@@ -356,10 +364,18 @@ def main():
 
     results["logreg"], predictions["logreg"] = eval_logreg(processed, label_names)
     results["svm"], predictions["svm"] = eval_svm(processed, label_names)
-    results["textcnn"], predictions["textcnn"] = eval_neural("textcnn", TEXTCNN_PATH, processed, label_map)
-    results["rnn"], predictions["rnn"] = eval_neural("rnn", RNN_PATH, processed, label_map)
-    results["lstm"], predictions["lstm"] = eval_neural("lstm", LSTM_PATH, processed, label_map)
-    results["distilbert"], predictions["distilbert"] = eval_distilbert(processed, label_map)
+    results["textcnn"], predictions["textcnn"] = eval_neural(
+        "textcnn", TEXTCNN_PATH, processed, label_map
+    )
+    results["rnn"], predictions["rnn"] = eval_neural(
+        "rnn", RNN_PATH, processed, label_map
+    )
+    results["lstm"], predictions["lstm"] = eval_neural(
+        "lstm", LSTM_PATH, processed, label_map
+    )
+    results["distilbert"], predictions["distilbert"] = eval_distilbert(
+        processed, label_map
+    )
 
     print("\ngenerating plots...")
     plot_comparison(results, str(REPORT_DIR / "model_comparison.png"))
@@ -372,12 +388,16 @@ def main():
         print(f"  saved: {confused_csv_path}")
 
         plot_top_confused_pairs(
-            confused_df, model_name,
+            confused_df,
+            model_name,
             str(REPORT_DIR / f"{model_name}_top_confused_pairs.png"),
         )
 
         plot_oos_binary_confusion(
-            y_test, y_pred, label_map, model_name,
+            y_test,
+            y_pred,
+            label_map,
+            model_name,
             str(REPORT_DIR / f"{model_name}_oos_binary.png"),
         )
 
@@ -394,7 +414,9 @@ def main():
         mlflow.log_artifact(str(REPORT_DIR / "latency_comparison.png"))
 
     print("\nfinal results:")
-    print(f"{'model':<14} {'accuracy':<12} {'macro_f1':<12} {'weighted_f1':<14} {'p50_ms':<12} {'p95_ms'}")
+    print(
+        f"{'model':<14} {'accuracy':<12} {'macro_f1':<12} {'weighted_f1':<14} {'p50_ms':<12} {'p95_ms'}"
+    )
     print("-" * 78)
     for model_name, metrics in results.items():
         print(
@@ -405,6 +427,7 @@ def main():
             f"{metrics['latency_p50_ms']:<12} "
             f"{metrics['latency_p95_ms']}"
         )
+
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,10 @@
 import os
+
 import mlflow
 import numpy as np
+
 from src.data.loader import load_clinc150, load_splits, save_splits
-from src.data.preprocessor import load_label_map, preprocess
+from src.data.preprocessor import preprocess
 from src.evaluation.metrics import (
     compute_classification_metrics,
     compute_latency,
@@ -25,6 +27,7 @@ LOGREG_PATH = "artifacts/models/logreg.pkl"
 SVM_PATH = "artifacts/models/svm.pkl"
 VECTORIZER_PATH = "artifacts/vectorizers/tfidf.pkl"
 
+
 def get_config_value(config: dict, key: str):
     kebab_key = key.replace("_", "-")
     if key in config:
@@ -32,6 +35,7 @@ def get_config_value(config: dict, key: str):
     if kebab_key in config:
         return config[kebab_key]
     raise KeyError(key)
+
 
 def load_or_download_data(config: dict) -> tuple:
     train_path = os.path.join(DATA_DIR, "train.csv")
@@ -45,6 +49,7 @@ def load_or_download_data(config: dict) -> tuple:
 
     processed, label_map = preprocess(splits)
     return processed, label_map
+
 
 def get_features(processed: dict, config: dict) -> tuple:
     train_texts = processed["train"]["text"].tolist()
@@ -64,6 +69,7 @@ def get_features(processed: dict, config: dict) -> tuple:
     X_test = transform(vectorizer, test_texts)
 
     return X_train, X_val, X_test, vectorizer
+
 
 def train_and_log(
     model_class,
@@ -137,6 +143,7 @@ def train_and_log(
         print(f"  run id : {run.info.run_id}")
 
         return all_metrics
+
 
 def main():
     config = load_config("classical")

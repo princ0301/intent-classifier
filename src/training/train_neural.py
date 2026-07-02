@@ -23,7 +23,6 @@ from src.utils.mlflow_utils import (
 )
 from src.utils.settings import settings
 
-
 DATA_DIR = "data/raw"
 VOCAB_PATH = "artifacts/models/vocab.pkl"
 MAX_LENGTH = 32
@@ -132,7 +131,9 @@ def predict_all(
     return np.array(all_preds), np.array(all_labels)
 
 
-def build_model(model_type: str, model_cfg: dict, vocab_size: int, num_classes: int) -> nn.Module:
+def build_model(
+    model_type: str, model_cfg: dict, vocab_size: int, num_classes: int
+) -> nn.Module:
     if model_type == "textcnn":
         return TextCNN(
             vocab_size=vocab_size,
@@ -182,7 +183,9 @@ def train_model(
     print(f"\n{model_type} parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config["training"]["learning_rate"])
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=config["training"]["learning_rate"]
+    )
 
     mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
     experiment_id = get_or_create_experiment(config["mlflow"]["experiment_name"])
@@ -200,17 +203,31 @@ def train_model(
         best_val_loss = float("inf")
         epochs_no_improve = 0
 
-        print(f"training {model_type} for up to {epochs} epochs (patience={patience}, grad_clip={grad_clip})...")
-        print(f"{'epoch':<8} {'train_loss':<14} {'train_acc':<14} {'val_loss':<14} {'val_acc'}")
+        print(
+            f"training {model_type} for up to {epochs} epochs (patience={patience}, grad_clip={grad_clip})..."
+        )
+        print(
+            f"{'epoch':<8} {'train_loss':<14} {'train_acc':<14} {'val_loss':<14} {'val_acc'}"
+        )
         print("-" * 65)
 
         for epoch in range(1, epochs + 1):
             train_loss, train_acc = run_epoch(
-                model, train_loader, criterion, optimizer, device,
-                training=True, grad_clip=grad_clip,
+                model,
+                train_loader,
+                criterion,
+                optimizer,
+                device,
+                training=True,
+                grad_clip=grad_clip,
             )
             val_loss, val_acc = run_epoch(
-                model, val_loader, criterion, None, device, training=False,
+                model,
+                val_loader,
+                criterion,
+                None,
+                device,
+                training=False,
             )
 
             log_metrics(
@@ -223,7 +240,9 @@ def train_model(
                 step=epoch,
             )
 
-            print(f"{epoch:<8} {train_loss:<14.4f} {train_acc:<14.4f} {val_loss:<14.4f} {val_acc:.4f}")
+            print(
+                f"{epoch:<8} {train_loss:<14.4f} {train_acc:<14.4f} {val_loss:<14.4f} {val_acc:.4f}"
+            )
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
@@ -259,7 +278,9 @@ def train_model(
         mlflow.log_artifact(report_path)
 
         log_confusion_matrix(
-            test_labels, test_preds, label_names,
+            test_labels,
+            test_preds,
+            label_names,
             save_path=f"artifacts/{model_type}_confusion_matrix.png",
         )
 
@@ -290,7 +311,9 @@ def main():
     print(f"vocabulary size: {len(vocab)}")
 
     batch_size = config["training"]["batch_size"]
-    train_loader, val_loader, test_loader = build_dataloaders(processed, vocab, batch_size)
+    train_loader, val_loader, test_loader = build_dataloaders(
+        processed, vocab, batch_size
+    )
 
     all_results = {}
     for model_type in ["textcnn", "rnn", "lstm"]:

@@ -1,4 +1,4 @@
-from fastapi import HTTPException, APIRouter, Request
+from fastapi import APIRouter, Request
 
 from api.schemas import ModelInfo, ModelsResponse
 

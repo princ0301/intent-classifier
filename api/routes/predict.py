@@ -1,6 +1,12 @@
 from fastapi import APIRouter, HTTPException, Request
 
-from api.schemas import BatchRequest, BatchResponse, PredictRequest, PredictResponse, TopIntent
+from api.schemas import (
+    BatchRequest,
+    BatchResponse,
+    PredictRequest,
+    PredictResponse,
+    TopIntent,
+)
 from src.monitoring.drift import append_current_data
 
 router = APIRouter()
@@ -25,7 +31,9 @@ def predict(payload: PredictRequest, request: Request) -> PredictResponse:
 
     if payload.model_type:
         if payload.model_type not in predictors:
-            raise HTTPException(status_code=400, detail=f"unknown model_type: {payload.model_type}")
+            raise HTTPException(
+                status_code=400, detail=f"unknown model_type: {payload.model_type}"
+            )
         result = predictors[payload.model_type].predict(payload.text)
         response = _to_predict_response(result)
     else:
@@ -69,4 +77,6 @@ def predict_batch(payload: BatchRequest, request: Request) -> BatchResponse:
         confidences=[r.confidence for r in responses],
     )
 
-    return BatchResponse(predictions=responses, total_latency_ms=round(total_latency, 3))
+    return BatchResponse(
+        predictions=responses, total_latency_ms=round(total_latency, 3)
+    )

@@ -1,7 +1,9 @@
-import torch
 import time
-import numpy as np
 from dataclasses import dataclass, field
+
+import numpy as np
+import torch
+
 from src.data.preprocessor import clean_text, load_label_map
 from src.features.tfidf import load_vectorizer, transform
 from src.models.classical import LogisticRegressionModel, SVMModel
@@ -20,8 +22,9 @@ LSTM_PATH = "artifacts/models/lstm.pt"
 DISTILBERT_DIR = "artifacts/models/distilbert"
 MAX_LENGTH_NN = 32
 MAX_LENGTH_HF = 128
- 
+
 SUPPORTED_MODELS = {"classical", "svm", "textcnn", "rnn", "lstm", "transformer"}
+
 
 @dataclass
 class PredictionResult:
@@ -32,12 +35,14 @@ class PredictionResult:
     is_oos: bool = False
     model_used: str = ""
 
-class Predictor:
 
+class Predictor:
     def __init__(self, model_type: str):
         if model_type not in SUPPORTED_MODELS:
-            raise ValueError(f"Unknown model_type: {model_type}, must be one of {SUPPORTED_MODELS}")
-        
+            raise ValueError(
+                f"Unknown model_type: {model_type}, must be one of {SUPPORTED_MODELS}"
+            )
+
         self.model_type = model_type
         self.label_map = load_label_map()
         self.id_to_label = {v: k for k, v in self.label_map.items()}
@@ -65,7 +70,7 @@ class Predictor:
             neural_config = load_config("neural")
             model_cfg = neural_config["model"][self.model_type]
             num_classes = len(self.label_map)
- 
+
             if self.model_type == "textcnn":
                 self._model = TextCNN(
                     vocab_size=len(self._vocab),
@@ -96,10 +101,10 @@ class Predictor:
                     dropout=model_cfg["dropout"],
                 )
                 self._model.load(LSTM_PATH)
- 
+
             self._model.to(self.device)
             self._model.eval()
- 
+
         elif self.model_type == "transformer":
             self._model = TransformerModel(
                 model_name=DISTILBERT_DIR,
@@ -107,7 +112,7 @@ class Predictor:
             )
             self._model.model.to(self.device)
             self._model.model.eval()
- 
+
     def _predict_proba(self, text: str) -> np.ndarray:
         cleaned = clean_text(text)
 
@@ -118,33 +123,33 @@ class Predictor:
             scores = self._model.model.decision_function(X)[0]
             exp_scores = np.exp(scores - np.max(scores))
             return exp_scores / exp_scores.sum()
-        
+
         if self.model_type in ("textcnn", "rnn", "lstm"):
             encoded = self._vocab.encode(cleaned, MAX_LENGTH_NN)
             tensor = torch.tensor([encoded], dtype=torch.long).to(self.device)
             return self._model.predict_proba(tensor)[0]
-        
+
         if self.model_type == "transformer":
             return self._model.predict_proba([cleaned], MAX_LENGTH_HF)[0]
- 
+
         raise ValueError(f"unsupported model_type: {self.model_type}")
-    
+
     def predict(self, text: str) -> PredictionResult:
         start = time.perf_counter()
         probs = self._predict_proba(text)
         latency_ms = (time.perf_counter() - start) * 1000
- 
+
         top_indices = np.argsort(probs)[-5:][::-1]
         top5 = [
             {"intent": self.id_to_label[idx], "confidence": round(float(probs[idx]), 4)}
             for idx in top_indices
         ]
- 
+
         best_idx = int(top_indices[0])
         intent = self.id_to_label[best_idx]
         confidence = float(probs[best_idx])
         is_oos = confidence < settings.oos_threshold
- 
+
         return PredictionResult(
             intent=intent,
             confidence=round(confidence, 4),
@@ -153,6 +158,6 @@ class Predictor:
             is_oos=is_oos,
             model_used=self.model_type,
         )
- 
+
     def predict_batch(self, texts: list[str]) -> list[PredictionResult]:
         return [self.predict(text) for text in texts]

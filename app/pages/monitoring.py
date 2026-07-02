@@ -39,7 +39,9 @@ try:
     st.caption(f"Configured split: {stats['split']:.0%} to model B")
 
 except Exception as e:
-    st.warning(f"No A/B stats yet. Make some predictions on the Predict page first. ({e})")
+    st.warning(
+        f"No A/B stats yet. Make some predictions on the Predict page first. ({e})"
+    )
 
 if st.button("Reset A/B stats"):
     api_reset_monitoring()
@@ -48,7 +50,9 @@ if st.button("Reset A/B stats"):
 
 st.divider()
 st.subheader("Data Drift Report")
-st.caption("Compares reference traffic (initial baseline) against recent production traffic.")
+st.caption(
+    "Compares reference traffic (initial baseline) against recent production traffic."
+)
 
 if st.button("Run drift check"):
     try:
@@ -76,7 +80,9 @@ if st.button("Run drift check"):
             st.success("Confidence is stable vs reference traffic.")
 
         if drift["oos_rate_drift"]["is_anomalous"]:
-            st.error("OOS rate has increased anomalously — possible topic drift in incoming queries.")
+            st.error(
+                "OOS rate has increased anomalously — possible topic drift in incoming queries."
+            )
         else:
             st.success("OOS rate is within normal range.")
 

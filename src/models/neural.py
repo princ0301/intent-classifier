@@ -1,5 +1,5 @@
-from pathlib import Path
 import pickle
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -50,7 +50,13 @@ class Vocabulary:
 
 
 class IntentDatasetNN(Dataset):
-    def __init__(self, texts: list[str], labels: list[int], vocab: Vocabulary, max_length: int = 32):
+    def __init__(
+        self,
+        texts: list[str],
+        labels: list[int],
+        vocab: Vocabulary,
+        max_length: int = 32,
+    ):
         self.labels = labels
         self.encodings = [vocab.encode(text, max_length) for text in texts]
 
@@ -79,14 +85,16 @@ class TextCNN(nn.Module):
 
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_idx)
 
-        self.convs = nn.ModuleList([
-            nn.Conv1d(
-                in_channels=embedding_dim,
-                out_channels=num_filters,
-                kernel_size=k,
-            )
-            for k in kernel_sizes
-        ])
+        self.convs = nn.ModuleList(
+            [
+                nn.Conv1d(
+                    in_channels=embedding_dim,
+                    out_channels=num_filters,
+                    kernel_size=k,
+                )
+                for k in kernel_sizes
+            ]
+        )
 
         self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(num_filters * len(kernel_sizes), num_classes)

@@ -14,12 +14,42 @@ st.title("Compare Models")
 st.caption("Side-by-side comparison of all trained models on CLINC150 test set.")
 
 RESULTS = {
-    "logreg":      {"accuracy": 0.8058, "macro_f1": 0.8416, "weighted_f1": 0.7985, "latency_p50_ms": 0.12},
-    "svm":         {"accuracy": 0.8002, "macro_f1": 0.8474, "weighted_f1": 0.7795, "latency_p50_ms": 0.14},
-    "textcnn":     {"accuracy": 0.7740, "macro_f1": 0.8244, "weighted_f1": 0.7646, "latency_p50_ms": 97.6},
-    "rnn":         {"accuracy": 0.1818, "macro_f1": 0.0020, "weighted_f1": 0.0560, "latency_p50_ms": 124.5},
-    "lstm":        {"accuracy": 0.7669, "macro_f1": 0.8113, "weighted_f1": 0.7555, "latency_p50_ms": 249.2},
-    "distilbert":  {"accuracy": 0.8765, "macro_f1": 0.9019, "weighted_f1": 0.8722, "latency_p50_ms": 9.6},
+    "logreg": {
+        "accuracy": 0.8058,
+        "macro_f1": 0.8416,
+        "weighted_f1": 0.7985,
+        "latency_p50_ms": 0.12,
+    },
+    "svm": {
+        "accuracy": 0.8002,
+        "macro_f1": 0.8474,
+        "weighted_f1": 0.7795,
+        "latency_p50_ms": 0.14,
+    },
+    "textcnn": {
+        "accuracy": 0.7740,
+        "macro_f1": 0.8244,
+        "weighted_f1": 0.7646,
+        "latency_p50_ms": 97.6,
+    },
+    "rnn": {
+        "accuracy": 0.1818,
+        "macro_f1": 0.0020,
+        "weighted_f1": 0.0560,
+        "latency_p50_ms": 124.5,
+    },
+    "lstm": {
+        "accuracy": 0.7669,
+        "macro_f1": 0.8113,
+        "weighted_f1": 0.7555,
+        "latency_p50_ms": 249.2,
+    },
+    "distilbert": {
+        "accuracy": 0.8765,
+        "macro_f1": 0.9019,
+        "weighted_f1": 0.8722,
+        "latency_p50_ms": 9.6,
+    },
 }
 
 df = pd.DataFrame(RESULTS).T
@@ -27,12 +57,16 @@ df.index.name = "model"
 
 st.subheader("Metrics Table")
 st.dataframe(
-    df.style.format({
-        "accuracy": "{:.2%}",
-        "macro_f1": "{:.2%}",
-        "weighted_f1": "{:.2%}",
-        "latency_p50_ms": "{:.2f} ms",
-    }).background_gradient(subset=["accuracy", "macro_f1", "weighted_f1"], cmap="Greens"),
+    df.style.format(
+        {
+            "accuracy": "{:.2%}",
+            "macro_f1": "{:.2%}",
+            "weighted_f1": "{:.2%}",
+            "latency_p50_ms": "{:.2f} ms",
+        }
+    ).background_gradient(
+        subset=["accuracy", "macro_f1", "weighted_f1"], cmap="Greens"
+    ),
     use_container_width=True,
 )
 
@@ -47,7 +81,9 @@ st.divider()
 st.subheader("Side-by-Side Prediction")
 st.caption("Run the same input through multiple models at once.")
 
-text = st.text_input("Enter a query to compare", placeholder="e.g. cancel my hotel reservation")
+text = st.text_input(
+    "Enter a query to compare", placeholder="e.g. cancel my hotel reservation"
+)
 selected_models = st.multiselect(
     "Models to compare",
     options=["classical", "svm", "transformer"],

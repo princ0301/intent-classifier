@@ -1,9 +1,10 @@
 import os
+
 import mlflow
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from transformers import Trainer, TrainingArguments, EarlyStoppingCallback
+from transformers import EarlyStoppingCallback, Trainer, TrainingArguments
 
 from src.data.loader import load_clinc150, load_splits, save_splits
 from src.data.preprocessor import preprocess
@@ -25,6 +26,7 @@ from src.utils.settings import settings
 DATA_DIR = "data/raw"
 MODEL_DIR = "artifacts/models/distilbert"
 
+
 def load_or_download_data(config: dict) -> tuple:
     train_path = os.path.join(DATA_DIR, "train.csv")
     if os.path.exists(train_path):
@@ -34,9 +36,10 @@ def load_or_download_data(config: dict) -> tuple:
         print("downloading CLINC150...")
         splits = load_clinc150(config["data"]["subset"])
         save_splits(splits, DATA_DIR)
-    
+
     processed, label_map = preprocess(splits)
     return processed, label_map
+
 
 def compute_metrics_hf(eval_pred) -> dict:
     logits, labels = eval_pred
@@ -46,6 +49,7 @@ def compute_metrics_hf(eval_pred) -> dict:
         "accuracy": metrics["accuracy"],
         "macro_f1": metrics["macro_f1"],
     }
+
 
 def predict_all(
     transformer: TransformerModel,
@@ -66,33 +70,36 @@ def predict_all(
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["labels"]
 
-            outputs = transformer.model(input_ids=input_ids, attention_mask=attention_mask)
+            outputs = transformer.model(
+                input_ids=input_ids, attention_mask=attention_mask
+            )
             preds = outputs.logits.argmax(dim=1).cpu().numpy()
             all_preds.extend(preds)
             all_labels.extend(labels.numpy())
- 
+
     return np.array(all_preds), np.array(all_labels)
+
 
 def main():
     config = load_config("transformer")
     torch.manual_seed(config["training"]["random_state"])
- 
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device: {device}")
- 
+
     processed, label_map = load_or_download_data(config)
- 
+
     model_cfg = config["model"]
     training_cfg = config["training"]
     max_length = config["data"]["max_length"]
- 
+
     print(f"loading {model_cfg['name']}...")
     transformer = TransformerModel(
         model_name=model_cfg["name"],
         num_labels=model_cfg["num_labels"],
         dropout=model_cfg["dropout"],
     )
- 
+
     print("tokenizing datasets...")
     train_dataset = IntentDatasetHF(
         processed["train"]["text"].tolist(),
@@ -112,26 +119,28 @@ def main():
         transformer.tokenizer,
         max_length,
     )
- 
+
     mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
     experiment_id = get_or_create_experiment(config["mlflow"]["experiment_name"])
- 
+
     with mlflow.start_run(
         experiment_id=experiment_id,
         run_name=config["mlflow"]["run_name"],
     ) as run:
-        mlflow.log_params({
-            "model.name": model_cfg["name"],
-            "model.num_labels": model_cfg["num_labels"],
-            "model.dropout": model_cfg["dropout"],
-            "training.epochs": training_cfg["epochs"],
-            "training.batch_size": training_cfg["batch_size"],
-            "training.learning_rate": training_cfg["learning_rate"],
-            "training.warmup_steps": training_cfg["warmup_steps"],
-            "training.weight_decay": training_cfg["weight_decay"],
-            "data.max_length": max_length,
-        })
- 
+        mlflow.log_params(
+            {
+                "model.name": model_cfg["name"],
+                "model.num_labels": model_cfg["num_labels"],
+                "model.dropout": model_cfg["dropout"],
+                "training.epochs": training_cfg["epochs"],
+                "training.batch_size": training_cfg["batch_size"],
+                "training.learning_rate": training_cfg["learning_rate"],
+                "training.warmup_steps": training_cfg["warmup_steps"],
+                "training.weight_decay": training_cfg["weight_decay"],
+                "data.max_length": max_length,
+            }
+        )
+
         training_args = TrainingArguments(
             output_dir=MODEL_DIR,
             num_train_epochs=training_cfg["epochs"],
@@ -149,7 +158,7 @@ def main():
             report_to="none",
             seed=training_cfg["random_state"],
         )
- 
+
         trainer = Trainer(
             model=transformer.model,
             args=training_args,
@@ -158,57 +167,59 @@ def main():
             compute_metrics=compute_metrics_hf,
             callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
         )
- 
+
         print("\nfine-tuning distilbert...")
         trainer.train()
- 
+
         print("\nloading best checkpoint...")
         transformer.save(MODEL_DIR)
- 
+
         id_to_label = {v: k for k, v in label_map.items()}
         label_names = [id_to_label[i] for i in range(len(label_map))]
- 
+
         print("evaluating on test set...")
         test_preds, test_labels = predict_all(
             transformer, test_dataset, training_cfg["batch_size"], device
         )
- 
+
         test_metrics = compute_classification_metrics(test_labels, test_preds)
         test_metrics_logged = {f"test_{k}": v for k, v in test_metrics.items()}
         log_metrics(test_metrics_logged)
- 
+
         def predict_fn(dataset):
             predict_all(transformer, dataset, training_cfg["batch_size"], device)
- 
+
         latency = compute_latency(predict_fn, test_dataset, n_runs=20)
         log_metrics(latency)
- 
+
         report = get_classification_report(test_labels, test_preds, label_names)
         report_path = "artifacts/distilbert_report.txt"
         with open(report_path, "w") as f:
             f.write(report)
         mlflow.log_artifact(report_path)
- 
+
         log_confusion_matrix(
             test_labels,
             test_preds,
             label_names,
             save_path="artifacts/distilbert_confusion_matrix.png",
         )
- 
+
         mlflow.log_artifact(MODEL_DIR)
- 
+
         print("uploading to S3...")
         for fname in os.listdir(MODEL_DIR):
             local_path = os.path.join(MODEL_DIR, fname)
             if os.path.isfile(local_path):
-                upload_artifact(local_path, f"{config['s3']['prefix']}/distilbert/{fname}")
- 
+                upload_artifact(
+                    local_path, f"{config['s3']['prefix']}/distilbert/{fname}"
+                )
+
         print(f"\ntest accuracy : {test_metrics['accuracy']}")
         print(f"test macro_f1 : {test_metrics['macro_f1']}")
         print(f"latency p50 : {latency['latency_p50_ms']}ms")
         print(f"run id : {run.info.run_id}")
- 
- 
+
+
 if __name__ == "__main__":
     main()

@@ -3,8 +3,8 @@ from fastapi import APIRouter, HTTPException, Request
 from api.schemas import ABStatsResponse, DriftResponse
 from src.monitoring.drift import (
     get_confidence_drift,
-    get_oos_rate_drift,
     get_drift_summary,
+    get_oos_rate_drift,
     load_current_data,
     load_reference_data,
     run_drift_report,

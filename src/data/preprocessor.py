@@ -26,7 +26,9 @@ def encode_labels(
     return df
 
 
-def save_label_map(label_map: dict[str, int], save_path: str = "artifacts/label_map.json") -> None:
+def save_label_map(
+    label_map: dict[str, int], save_path: str = "artifacts/label_map.json"
+) -> None:
     path = Path(save_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
@@ -45,7 +47,9 @@ def get_id_to_label(label_map: dict[str, int]) -> dict[int, str]:
     return {idx: label for label, idx in label_map.items()}
 
 
-def preprocess(splits: dict[str, pd.DataFrame]) -> tuple[dict[str, pd.DataFrame], dict[str, int]]:
+def preprocess(
+    splits: dict[str, pd.DataFrame],
+) -> tuple[dict[str, pd.DataFrame], dict[str, int]]:
     label_map = build_label_map(splits["train"])
 
     processed = {}
