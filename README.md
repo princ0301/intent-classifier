@@ -166,8 +166,6 @@ Detects three types of drift in production traffic:
 | OOS rate increase | > 15% | Flag topic drift |
 | Data drift (text length) | Kolmogorov-Smirnov | Flag distribution shift |
 
-![Monitoring Dashboard](docs/images/monitoring_dashboard.png)
-
 ---
 
 ## Streamlit Frontend
