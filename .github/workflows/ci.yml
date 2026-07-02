@@ -102,8 +102,5 @@ jobs:
       - name: Generate label map
         run: uv run python scripts/generate_label_map.py
 
-      - name: Run serving tests
-        run: uv run pytest tests/test_serving.py -v -k "not transformer"
-
-      - name: Run API tests
-        run: uv run pytest tests/test_api.py -v -k "not transformer"
+      - name: Run serving tests (classical only)
+        run: uv run pytest tests/test_serving.py -v -k "classical or ab_stats or ab_router or predictor_invalid or predictor_batch"

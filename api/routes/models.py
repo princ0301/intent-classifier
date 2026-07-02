@@ -13,9 +13,7 @@ REGISTERED_MODELS = [
 
 @router.get("/models", response_model=ModelsResponse)
 def list_models() -> ModelsResponse:
-    return ModelsResponse(
-        models=[ModelInfo(name=m["name"], alias=m["alias"]) for m in REGISTERED_MODELS]
-    )
+    return ModelsResponse(models=[ModelInfo(name=m["name"], alias=m["alias"]) for m in REGISTERED_MODELS])
 
 
 @router.get("/models/loaded")

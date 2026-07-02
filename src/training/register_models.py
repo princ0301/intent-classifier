@@ -17,12 +17,8 @@ VECTORIZER_PATH = "artifacts/vectorizers/tfidf.pkl"
 REGISTRY_NAME = "intent-classifier"
 
 
-def register_sklearn_model(
-    model_obj, model_type: str, sample_input, experiment_id: str
-) -> None:
-    with mlflow.start_run(
-        experiment_id=experiment_id, run_name=f"register-{model_type}"
-    ) as run:
+def register_sklearn_model(model_obj, model_type: str, sample_input, experiment_id: str) -> None:
+    with mlflow.start_run(experiment_id=experiment_id, run_name=f"register-{model_type}") as run:
         mlflow.sklearn.log_model(
             sk_model=model_obj.model,
             artifact_path="model",
@@ -40,9 +36,7 @@ def register_sklearn_model(
 def register_transformer_model(experiment_id: str) -> None:
     transformer = TransformerModel(model_name=DISTILBERT_DIR, num_labels=151)
 
-    with mlflow.start_run(
-        experiment_id=experiment_id, run_name="register-distilbert"
-    ) as run:
+    with mlflow.start_run(experiment_id=experiment_id, run_name="register-distilbert") as run:
         mlflow.transformers.log_model(
             transformers_model={
                 "model": transformer.model,

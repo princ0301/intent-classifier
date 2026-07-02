@@ -39,9 +39,7 @@ class PredictionResult:
 class Predictor:
     def __init__(self, model_type: str):
         if model_type not in SUPPORTED_MODELS:
-            raise ValueError(
-                f"Unknown model_type: {model_type}, must be one of {SUPPORTED_MODELS}"
-            )
+            raise ValueError(f"Unknown model_type: {model_type}, must be one of {SUPPORTED_MODELS}")
 
         self.model_type = model_type
         self.label_map = load_label_map()
@@ -140,10 +138,7 @@ class Predictor:
         latency_ms = (time.perf_counter() - start) * 1000
 
         top_indices = np.argsort(probs)[-5:][::-1]
-        top5 = [
-            {"intent": self.id_to_label[idx], "confidence": round(float(probs[idx]), 4)}
-            for idx in top_indices
-        ]
+        top5 = [{"intent": self.id_to_label[idx], "confidence": round(float(probs[idx]), 4)} for idx in top_indices]
 
         best_idx = int(top_indices[0])
         intent = self.id_to_label[best_idx]

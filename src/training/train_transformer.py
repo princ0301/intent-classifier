@@ -70,9 +70,7 @@ def predict_all(
             attention_mask = batch["attention_mask"].to(device)
             labels = batch["labels"]
 
-            outputs = transformer.model(
-                input_ids=input_ids, attention_mask=attention_mask
-            )
+            outputs = transformer.model(input_ids=input_ids, attention_mask=attention_mask)
             preds = outputs.logits.argmax(dim=1).cpu().numpy()
             all_preds.extend(preds)
             all_labels.extend(labels.numpy())
@@ -178,9 +176,7 @@ def main():
         label_names = [id_to_label[i] for i in range(len(label_map))]
 
         print("evaluating on test set...")
-        test_preds, test_labels = predict_all(
-            transformer, test_dataset, training_cfg["batch_size"], device
-        )
+        test_preds, test_labels = predict_all(transformer, test_dataset, training_cfg["batch_size"], device)
 
         test_metrics = compute_classification_metrics(test_labels, test_preds)
         test_metrics_logged = {f"test_{k}": v for k, v in test_metrics.items()}
@@ -211,9 +207,7 @@ def main():
         for fname in os.listdir(MODEL_DIR):
             local_path = os.path.join(MODEL_DIR, fname)
             if os.path.isfile(local_path):
-                upload_artifact(
-                    local_path, f"{config['s3']['prefix']}/distilbert/{fname}"
-                )
+                upload_artifact(local_path, f"{config['s3']['prefix']}/distilbert/{fname}")
 
         print(f"\ntest accuracy : {test_metrics['accuracy']}")
         print(f"test macro_f1 : {test_metrics['macro_f1']}")

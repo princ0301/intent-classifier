@@ -64,9 +64,7 @@ st.dataframe(
             "weighted_f1": "{:.2%}",
             "latency_p50_ms": "{:.2f} ms",
         }
-    ).background_gradient(
-        subset=["accuracy", "macro_f1", "weighted_f1"], cmap="Greens"
-    ),
+    ).background_gradient(subset=["accuracy", "macro_f1", "weighted_f1"], cmap="Greens"),
     use_container_width=True,
 )
 
@@ -81,9 +79,7 @@ st.divider()
 st.subheader("Side-by-Side Prediction")
 st.caption("Run the same input through multiple models at once.")
 
-text = st.text_input(
-    "Enter a query to compare", placeholder="e.g. cancel my hotel reservation"
-)
+text = st.text_input("Enter a query to compare", placeholder="e.g. cancel my hotel reservation")
 selected_models = st.multiselect(
     "Models to compare",
     options=["classical", "svm", "transformer"],

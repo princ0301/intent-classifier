@@ -110,9 +110,7 @@ def get_drift_summary(snapshot) -> dict:
     return summary
 
 
-def save_drift_report_html(
-    snapshot, save_path: str = "artifacts/monitoring/drift_report.html"
-) -> None:
+def save_drift_report_html(snapshot, save_path: str = "artifacts/monitoring/drift_report.html") -> None:
     path = Path(save_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     snapshot.save_html(str(path))

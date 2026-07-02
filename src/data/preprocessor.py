@@ -26,9 +26,7 @@ def encode_labels(
     return df
 
 
-def save_label_map(
-    label_map: dict[str, int], save_path: str = "artifacts/label_map.json"
-) -> None:
+def save_label_map(label_map: dict[str, int], save_path: str = "artifacts/label_map.json") -> None:
     path = Path(save_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:

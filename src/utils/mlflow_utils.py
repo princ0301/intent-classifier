@@ -49,9 +49,7 @@ def log_confusion_matrix(
     mlflow.log_artifact(str(path))
 
 
-def register_model(
-    run_id: str, artifact_path: str, model_name: str, alias: str = "champion"
-) -> None:
+def register_model(run_id: str, artifact_path: str, model_name: str, alias: str = "champion") -> None:
     model_uri = f"runs:/{run_id}/{artifact_path}"
     result = mlflow.register_model(model_uri, model_name)
     client = mlflow.MlflowClient()

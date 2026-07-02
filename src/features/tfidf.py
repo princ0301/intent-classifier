@@ -29,9 +29,7 @@ def transform(vectorizer: TfidfVectorizer, texts: list[str]) -> sp.csr_matrix:
     return vectorizer.transform(texts)
 
 
-def save_vectorizer(
-    vectorizer: TfidfVectorizer, save_path: str = "artifacts/vectorizers/tfidf.pkl"
-) -> None:
+def save_vectorizer(vectorizer: TfidfVectorizer, save_path: str = "artifacts/vectorizers/tfidf.pkl") -> None:
     path = Path(save_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "wb") as f:

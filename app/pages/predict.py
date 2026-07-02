@@ -11,9 +11,7 @@ from app.api_client import api_predict, require_api
 require_api()
 
 st.title("Predict Intent")
-st.caption(
-    "Test the intent classifier live, switching between models or letting the A/B router decide."
-)
+st.caption("Test the intent classifier live, switching between models or letting the A/B router decide.")
 
 col1, col2 = st.columns([3, 1])
 
@@ -46,9 +44,7 @@ if st.button("Predict", type="primary", disabled=not text):
         st.warning("This query was flagged as out-of-scope (low confidence).")
 
     if result.get("ab_variant"):
-        st.info(
-            f"Served by A/B variant **{result['ab_variant']}** using model `{result['model_used']}`"
-        )
+        st.info(f"Served by A/B variant **{result['ab_variant']}** using model `{result['model_used']}`")
     else:
         st.info(f"Served by model `{result['model_used']}`")
 

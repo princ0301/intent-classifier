@@ -45,12 +45,8 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
 
     return {
         "accuracy": round(accuracy_score(y_true, y_pred), 4),
-        "macro_f1": round(
-            f1_score(y_true, y_pred, average="macro", zero_division=0), 4
-        ),
-        "weighted_f1": round(
-            f1_score(y_true, y_pred, average="weighted", zero_division=0), 4
-        ),
+        "macro_f1": round(f1_score(y_true, y_pred, average="macro", zero_division=0), 4),
+        "weighted_f1": round(f1_score(y_true, y_pred, average="weighted", zero_division=0), 4),
     }
 
 
@@ -202,9 +198,7 @@ def eval_distilbert(processed: dict, label_map: dict) -> tuple[dict, np.ndarray]
         for batch in loader:
             input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
-            outputs = transformer.model(
-                input_ids=input_ids, attention_mask=attention_mask
-            )
+            outputs = transformer.model(input_ids=input_ids, attention_mask=attention_mask)
             preds = outputs.logits.argmax(dim=1).cpu().numpy()
             all_preds.extend(preds)
 
@@ -364,18 +358,10 @@ def main():
 
     results["logreg"], predictions["logreg"] = eval_logreg(processed, label_names)
     results["svm"], predictions["svm"] = eval_svm(processed, label_names)
-    results["textcnn"], predictions["textcnn"] = eval_neural(
-        "textcnn", TEXTCNN_PATH, processed, label_map
-    )
-    results["rnn"], predictions["rnn"] = eval_neural(
-        "rnn", RNN_PATH, processed, label_map
-    )
-    results["lstm"], predictions["lstm"] = eval_neural(
-        "lstm", LSTM_PATH, processed, label_map
-    )
-    results["distilbert"], predictions["distilbert"] = eval_distilbert(
-        processed, label_map
-    )
+    results["textcnn"], predictions["textcnn"] = eval_neural("textcnn", TEXTCNN_PATH, processed, label_map)
+    results["rnn"], predictions["rnn"] = eval_neural("rnn", RNN_PATH, processed, label_map)
+    results["lstm"], predictions["lstm"] = eval_neural("lstm", LSTM_PATH, processed, label_map)
+    results["distilbert"], predictions["distilbert"] = eval_distilbert(processed, label_map)
 
     print("\ngenerating plots...")
     plot_comparison(results, str(REPORT_DIR / "model_comparison.png"))
@@ -414,9 +400,7 @@ def main():
         mlflow.log_artifact(str(REPORT_DIR / "latency_comparison.png"))
 
     print("\nfinal results:")
-    print(
-        f"{'model':<14} {'accuracy':<12} {'macro_f1':<12} {'weighted_f1':<14} {'p50_ms':<12} {'p95_ms'}"
-    )
+    print(f"{'model':<14} {'accuracy':<12} {'macro_f1':<12} {'weighted_f1':<14} {'p50_ms':<12} {'p95_ms'}")
     print("-" * 78)
     for model_name, metrics in results.items():
         print(

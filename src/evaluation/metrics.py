@@ -11,12 +11,8 @@ def compute_classification_metrics(
 ) -> dict:
     return {
         "accuracy": round(accuracy_score(y_true, y_pred), 4),
-        "macro_f1": round(
-            f1_score(y_true, y_pred, average="macro", zero_division=0), 4
-        ),
-        "weighted_f1": round(
-            f1_score(y_true, y_pred, average="weighted", zero_division=0), 4
-        ),
+        "macro_f1": round(f1_score(y_true, y_pred, average="macro", zero_division=0), 4),
+        "weighted_f1": round(f1_score(y_true, y_pred, average="weighted", zero_division=0), 4),
     }
 
 
@@ -41,9 +37,7 @@ def get_classification_report(
     y_pred: np.ndarray,
     label_names: list[str],
 ) -> str:
-    return classification_report(
-        y_true, y_pred, target_names=label_names, zero_division=0
-    )
+    return classification_report(y_true, y_pred, target_names=label_names, zero_division=0)
 
 
 def compare_models(results: dict) -> pd.DataFrame:
